@@ -362,39 +362,112 @@ with tab_evaluation:
     if st.session_state.vector_manager is None:
         st.warning("Please index documents in the 'Q&A Chat' tab first.")
     else:
-        st.markdown("#### 1. Compare Dense vs. Hybrid Retrieval")
-        sample_benchmark_queries = [
-            {"query": "How many days per week can employees work remotely?", "keyword": "remotely"},
-            {"query": "What is the maximum reimbursement for home office equipment?", "keyword": "$1,200"},
-            {"query": "What hardware refreshes are provided for engineering laptops?", "keyword": "refreshed"},
-            {"query": "Why does RAG prevent LLM hallucination?", "keyword": "hallucination"},
-            {"query": "What are optimal chunk sizes for technical document retrieval?", "keyword": "overlap"},
-        ]
+        st.markdown(f"**Currently Indexed Documents**: `{', '.join(st.session_state.indexed_files)}` ({st.session_state.total_chunks} chunks)")
 
-        if st.button("⚡ Run Dense vs. Hybrid Retrieval Benchmark"):
-            with st.spinner("Benchmarking retrieval strategies across test queries..."):
-                bench_res = RAGEvaluator.compare_retrievers(
-                    st.session_state.vector_manager,
-                    sample_benchmark_queries,
-                    top_k=top_k,
+        st.markdown("#### 1. Compare Dense vs. Hybrid Retrieval")
+        st.caption("Benchmark how quickly and accurately Dense (FAISS) vs. Hybrid (FAISS + BM25) search finds passages in your documents.")
+
+        benchmark_mode = st.radio(
+            "Benchmark Query Source",
+            options=["Custom Query (Test Your Uploaded Document)", "Built-in Sample Queries (For Sample Docs)"],
+            horizontal=True,
+        )
+
+        if benchmark_mode == "Custom Query (Test Your Uploaded Document)":
+            col_cq1, col_cq2 = st.columns([3, 2])
+            with col_cq1:
+                custom_bench_query = st.text_input(
+                    "Enter a search query relevant to your document",
+                    value="",
+                    placeholder="e.g., What are the key findings or policy limits?",
+                )
+            with col_cq2:
+                custom_keyword = st.text_input(
+                    "Optional target keyword to verify in results",
+                    value="",
+                    placeholder="e.g., specific name, number, or term",
                 )
 
-                col_b1, col_b2, col_b3 = st.columns(3)
-                col_b1.metric("Queries Tested", bench_res["total_queries"])
-                col_b2.metric("Avg Dense Latency", f"{bench_res['avg_dense_latency_ms']} ms")
-                col_b3.metric("Avg Hybrid Latency", f"{bench_res['avg_hybrid_latency_ms']} ms")
+            if st.button("⚡ Benchmark Dense vs. Hybrid on Your Query"):
+                if not custom_bench_query.strip():
+                    st.warning("Please enter a test query first.")
+                else:
+                    with st.spinner("Benchmarking search strategies on your document..."):
+                        bench_res = RAGEvaluator.compare_retrievers(
+                            st.session_state.vector_manager,
+                            [{"query": custom_bench_query.strip(), "keyword": custom_keyword.strip()}],
+                            top_k=top_k,
+                        )
+                        col_b1, col_b2, col_b3 = st.columns(3)
+                        col_b1.metric("Search Strategy", "Dense vs. Hybrid")
+                        col_b2.metric("Dense FAISS Latency", f"{bench_res['avg_dense_latency_ms']} ms")
+                        col_b3.metric("Hybrid Latency", f"{bench_res['avg_hybrid_latency_ms']} ms")
 
-                st.dataframe(bench_res["records"], use_container_width=True)
+                        st.dataframe(bench_res["records"], use_container_width=True)
+
+                        # Side-by-side retrieved passages comparison
+                        dense_retriever = st.session_state.vector_manager.get_retriever(retriever_type="dense", top_k=top_k)
+                        hybrid_retriever = st.session_state.vector_manager.get_retriever(retriever_type="hybrid", top_k=top_k)
+                        dense_docs = dense_retriever.invoke(custom_bench_query)
+                        hybrid_docs = hybrid_retriever.invoke(custom_bench_query)
+
+                        col_d, col_h = st.columns(2)
+                        with col_d:
+                            st.markdown(f"**Dense-Only (FAISS) Results ({len(dense_docs)} chunks)**")
+                            for idx, d in enumerate(dense_docs):
+                                st.caption(f"Chunk {idx+1} from `{d.metadata.get('source', 'doc')}` (p. {d.metadata.get('page', 1)}):")
+                                st.text(d.page_content[:200] + "...")
+                        with col_h:
+                            st.markdown(f"**Hybrid (FAISS + BM25) Results ({len(hybrid_docs)} chunks)**")
+                            for idx, d in enumerate(hybrid_docs):
+                                st.caption(f"Chunk {idx+1} from `{d.metadata.get('source', 'doc')}` (p. {d.metadata.get('page', 1)}):")
+                                st.text(d.page_content[:200] + "...")
+
+        else:
+            sample_benchmark_queries = [
+                {"query": "How many days per week can employees work remotely?", "keyword": "remotely"},
+                {"query": "What is the maximum reimbursement for home office equipment?", "keyword": "$1,200"},
+                {"query": "What hardware refreshes are provided for engineering laptops?", "keyword": "refreshed"},
+                {"query": "Why does RAG prevent LLM hallucination?", "keyword": "hallucination"},
+                {"query": "What are optimal chunk sizes for technical document retrieval?", "keyword": "overlap"},
+            ]
+
+            if st.button("⚡ Run Built-in 5-Query Benchmark"):
+                with st.spinner("Benchmarking retrieval strategies across test queries..."):
+                    bench_res = RAGEvaluator.compare_retrievers(
+                        st.session_state.vector_manager,
+                        sample_benchmark_queries,
+                        top_k=top_k,
+                    )
+
+                    col_b1, col_b2, col_b3 = st.columns(3)
+                    col_b1.metric("Queries Tested", bench_res["total_queries"])
+                    col_b2.metric("Avg Dense Latency", f"{bench_res['avg_dense_latency_ms']} ms")
+                    col_b3.metric("Avg Hybrid Latency", f"{bench_res['avg_hybrid_latency_ms']} ms")
+
+                    st.dataframe(bench_res["records"], use_container_width=True)
 
         st.markdown("---")
         st.markdown("#### 2. Pipeline Groundedness & Faithfulness Audit")
+        st.caption("Test whether the LLM grounds its answers in your retrieved documents or hallucinates.")
+
+        audit_custom_q = st.text_input(
+            "Custom question to audit on your document (Leave blank to run standard 3-question audit):",
+            value="",
+            placeholder="e.g., Summarize the main conclusion of section 2",
+        )
+
         if st.button("🧪 Run Groundedness Audit"):
             with st.spinner("Evaluating faithfulness and answer relevance..."):
-                audit_tests = [
-                    {"question": "What is the parental leave policy?"},
-                    {"question": "What is the daily meal allowance when traveling?"},
-                    {"question": "What happens if a question asks about unmentioned policies like stock options?"},
-                ]
+                if audit_custom_q.strip():
+                    audit_tests = [{"question": audit_custom_q.strip()}]
+                else:
+                    audit_tests = [
+                        {"question": "What is the parental leave policy?"},
+                        {"question": "What is the daily meal allowance when traveling?"},
+                        {"question": "What happens if a question asks about unmentioned policies like stock options?"},
+                    ]
+
                 eval_res = RAGEvaluator.evaluate_pipeline(st.session_state.rag_pipeline, audit_tests)
 
                 col_e1, col_e2, col_e3 = st.columns(3)
@@ -403,6 +476,7 @@ with tab_evaluation:
                 col_e3.metric("Avg Latency", f"{eval_res['average_latency_sec']} s")
 
                 st.json(eval_res["detailed_results"])
+
 
 
 # ----------------- TAB 3: SYSTEM INFO -----------------
