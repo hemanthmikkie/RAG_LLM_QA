@@ -25,7 +25,9 @@ def run_benchmark():
     sample_paths = [
         os.path.join(sample_dir, "company_policies.txt"),
         os.path.join(sample_dir, "rag_architecture_overview.txt"),
+        os.path.join(sample_dir, "sample_ai_paper.pdf"),
     ]
+
 
     all_docs = []
     for path in sample_paths:
