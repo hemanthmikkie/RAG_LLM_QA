@@ -95,6 +95,7 @@ class LLMFactory:
             )
 
         elif provider in {"mock", "fake"}:
+            import re
             from langchain_core.language_models.chat_models import SimpleChatModel
 
             class MockChatModel(SimpleChatModel):
@@ -103,6 +104,38 @@ class LLMFactory:
                     return "mock"
 
                 def _call(self, messages, stop=None, run_manager=None, **kwargs):
+                    question = ""
+                    context = ""
+                    for m in messages:
+                        content = getattr(m, "content", "")
+                        if hasattr(m, "__class__") and "Human" in m.__class__.__name__:
+                            question = content
+                        elif "Context:" in content:
+                            context = content.split("Context:", 1)[1]
+
+                    if question and context:
+                        words = [w.lower().strip(".,;:?!'\"()[]") for w in question.split() if len(w) > 3]
+                        sentences = [
+                            s.strip()
+                            for s in re.split(r"(?<=[.!?])\s+|\n+", context)
+                            if len(s.strip()) > 15 and not s.strip().startswith("---")
+                        ]
+                        scored = []
+                        for s in sentences:
+                            s_lower = s.lower()
+                            hits = sum(1 for w in words if w in s_lower)
+                            if hits > 0:
+                                scored.append((hits, s))
+                        scored.sort(key=lambda x: x[0], reverse=True)
+
+                        if scored:
+                            top_snippets = [f"• {item[1]}" for item in scored[:3]]
+                            return (
+                                "**[Offline Mode - Extractive Grounding]**\n\n"
+                                + "\n\n".join(top_snippets)
+                                + "\n\n*(Tip: Add a Gemini API key in the sidebar for conversational generative answers).* "
+                            )
+
                     return "This is a mock grounded answer based on the provided context."
 
             return MockChatModel()
