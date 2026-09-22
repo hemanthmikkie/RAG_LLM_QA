@@ -1,0 +1,29 @@
+# Core LangChain and Vector Stores
+langchain>=0.2.14
+langchain-community>=0.2.12
+langchain-core>=0.2.38
+langchain-google-genai>=1.0.8
+langchain-openai>=0.1.22
+faiss-cpu>=1.8.0.post1
+rank_bm25>=0.2.2
+
+# Document loaders & format parsers
+pypdf>=4.3.1
+docx2txt>=0.8
+
+# Embeddings & Transformers
+sentence-transformers>=3.0.1
+tiktoken>=0.7.0
+
+# User Interfaces & API
+streamlit>=1.37.0
+fastapi>=0.112.0
+uvicorn>=0.30.5
+python-multipart>=0.0.9
+
+# Environment and Utilities
+python-dotenv>=1.0.1
+pydantic>=2.8.2
+requests>=2.32.3
+pytest>=8.3.2
+

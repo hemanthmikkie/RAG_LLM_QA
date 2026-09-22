@@ -1,0 +1,27 @@
+# Acme Corporation Global Employee Handbook & Workplace Policy (2026 Edition)
+
+## Section 1: Remote and Hybrid Work Guidelines
+Acme Corporation embraces a flexible hybrid work model. Full-time team members are eligible to work remotely up to three (3) days per week, with two (2) designated in-office collaboration days (typically Tuesdays and Thursdays). Fully remote arrangements require written approval from the department VP and People Operations. 
+
+Remote employees are expected to maintain core operational hours from 10:00 AM to 4:00 PM in their local time zone. Daily communication must be conducted via official Slack channels and company Google Meet video conferences.
+
+## Section 2: Annual Paid Time Off (PTO) and Leaves
+1. Standard PTO Accrual: All full-time regular employees accrue 22 days of paid time off per calendar year, accruing evenly at 1.83 days per month.
+2. Carryover Rules: A maximum of five (5) unused PTO days may roll over into the following calendar year. Any additional unused PTO expires on December 31st.
+3. Parental Leave: Acme offers sixteen (16) weeks of fully paid parental leave for primary and secondary caregivers following the birth, adoption, or foster placement of a child.
+4. Wellness Days: Every employee receives three (3) dedicated mental health/wellness days per annum, which do not deduct from their general PTO balance.
+
+## Section 3: Technology and Remote Workspace Stipends
+- Home Office Setup Allowance: Each new team member receives a one-time reimbursement of up to $1,200 USD during their first 60 days of employment for home office equipment (ergonomic chair, monitor, desk, peripherals).
+- Monthly Connectivity Reimbursement: Remote and hybrid workers are entitled to a monthly internet and mobile stipend of $75 USD, submitted via Expensify by the 25th of each month.
+- Hardware Refresh: Standard engineering laptops (MacBook Pro 16-inch M-series or ThinkPad P1) are refreshed every three (3) years.
+
+## Section 4: Travel and Expense Reimbursement
+1. Meals Per Diem: When traveling for approved client or team on-site business, the daily meal allowance is capped at $85 USD per day. Alcohol expenses require prior managerial authorization.
+2. Air Travel: Domestic flights under 5 hours must be booked in Economy or Economy Plus. International flights exceeding 7 continuous hours are eligible for Business Class booking.
+3. Receipt Threshold: Detailed itemized receipts are mandatory for all individual expenses exceeding $25 USD.
+
+## Section 5: Code of Conduct & Information Security
+- Confidentiality: Company proprietary code, customer financial records, and internal strategy decks are strictly confidential. Storing company source code or customer data on unencrypted personal drives or uploading to unauthorized third-party public AI services is strictly prohibited.
+- Passwords & 2FA: Two-factor authentication (2FA) using hardware security keys or authenticator apps (YubiKey or Google Authenticator) is required across all corporate logins. SMS-based 2FA is deprecated.
+

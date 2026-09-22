@@ -1,0 +1,31 @@
+# Architectural Principles of Retrieval-Augmented Generation (RAG)
+
+## 1. Overview and Core Motivation
+Retrieval-Augmented Generation (RAG) is an architectural pattern that pairs an information retrieval engine with a generative large language model (LLM). While frontier foundational models possess broad world knowledge, they exhibit two critical limitations:
+1. Hallucination: Inventing plausible-sounding but factually fabricated claims when answering domain-specific queries.
+2. Temporal Staleness and Knowledge Boundaries: Inability to access private corporate data or events postdating their training cut-off date.
+
+By retrieving authoritative, externally validated document chunks from a custom knowledge base and injecting them dynamically into the prompt context window, RAG grounds the LLM in truth, drastically slashing hallucination rates.
+
+## 2. Ingestion and Chunking Strategy
+Document ingestion decomposes unstructured raw texts (PDFs, Word docs, web pages) into coherent segments.
+- Chunk Size vs. Overlap Trade-off: Chunks that are too small (e.g., 50 tokens) lose semantic context, leading to poor generation. Chunks that are too large (e.g., 2000 tokens) dilute the embedding signal and may inject extraneous noise into the prompt.
+- Optimal Chunking Parameters: Empirical benchmarks demonstrate that chunk sizes between 400 and 800 tokens with 10% to 15% sliding-window overlap (e.g., 50 to 100 tokens) yield the highest retrieval precision for technical documents.
+- Recursive Character Splitting: Hierarchically splits across logical boundaries—paragraphs (`\n\n`), sentences (`\n`, `.`), and word boundaries—preventing mid-sentence truncation.
+
+## 3. Vector Embeddings and Dense Retrieval
+Dense retrieval translates text passages into high-dimensional vector representations using embedding encoders such as Sentence-Transformers (`all-MiniLM-L6-v2`) or OpenAI's `text-embedding-3-small`.
+- Similarity Metrics: Cosine similarity or inner product (dot product) evaluates the semantic distance between the user query vector and indexed chunk vectors.
+- Vector Indexing (FAISS): Facebook AI Similarity Search (FAISS) enables sub-millisecond nearest neighbor search over millions of high-dimensional vectors using quantization and inverted file indexing (IVF-PQ).
+
+## 4. Sparse vs. Dense vs. Hybrid Retrieval
+- Dense Retrieval Strengths: Captures semantic intent, synonyms, and paraphrasing (e.g., matching "laptop stipend" to "hardware reimbursement").
+- Sparse Retrieval (BM25) Strengths: Excels at exact keyword matching, code identifiers, serial numbers, acronyms, and product codes where dense embeddings frequently struggle.
+- Hybrid Retrieval (Ensemble): Combines dense vector similarity scores and BM25 inverse document frequency scores using Reciprocal Rank Fusion (RRF) or convex linear weighting (e.g., 60% dense + 40% sparse). Hybrid retrieval consistently outperforms either approach alone on domain-specific benchmarks.
+
+## 5. Grounding, Prompt Construction, and Anti-Hallucination
+To guarantee safe enterprise deployment, the prompt must explicitly constrain the model:
+1. Grounded Context Mandate: Instruct the LLM to synthesize responses exclusively from provided passages.
+2. Abstention Mechanism: Instruct the model to clearly declare when the provided passages lack sufficient evidence, rather than guessing.
+3. Citation Traceability: Mandate that each factual claim references its originating document name, page number, and chunk index.
+
