@@ -28,6 +28,14 @@ def test_document_loader_txt():
     assert "Acme Corporation" in docs[0].page_content
 
 
+def test_document_loader_pdf():
+    sample_path = os.path.join(os.path.dirname(__file__), "..", "data", "sample_docs", "sample_ai_paper.pdf")
+    docs = DocumentLoaderService.load_from_file_path(sample_path)
+    assert len(docs) > 0
+    assert "sample_ai_paper.pdf" in docs[0].metadata["source"]
+    assert "Attention Is All You Need" in docs[0].page_content
+
+
 def test_chunker_metadata():
     docs = [
         Document(

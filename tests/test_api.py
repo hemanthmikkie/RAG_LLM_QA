@@ -20,7 +20,7 @@ def test_index_samples_and_query_endpoints():
     assert index_res.status_code == 200
     index_data = index_res.json()
     assert index_data["total_chunks"] > 0
-    assert len(index_data["indexed_files"]) == 2
+    assert len(index_data["indexed_files"]) == 3
 
     # 2. Query endpoint
     query_res = client.post(

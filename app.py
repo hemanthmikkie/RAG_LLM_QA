@@ -174,6 +174,7 @@ with tab_chat:
             st.markdown("**Or quickly test with included sample documents:**")
             st.markdown("- `company_policies.txt` (Remote work, PTO, benefits)")
             st.markdown("- `rag_architecture_overview.txt` (RAG concepts, embeddings)")
+            st.markdown("- `sample_ai_paper.pdf` (Transformer self-attention PDF paper)")
             btn_sample = st.button("📖 Load Sample Knowledge Base")
 
         # Handle indexing action
@@ -188,6 +189,7 @@ with tab_chat:
                         sample_paths = [
                             os.path.join(sample_dir, "company_policies.txt"),
                             os.path.join(sample_dir, "rag_architecture_overview.txt"),
+                            os.path.join(sample_dir, "sample_ai_paper.pdf"),
                         ]
                         for path in sample_paths:
                             if os.path.exists(path):
