@@ -90,8 +90,10 @@ with st.sidebar:
             "Gemini API Key",
             value=default_gemini_key,
             type="password",
-            help="Get from Google AI Studio",
+            help="Get a free key from https://aistudio.google.com/app/apikey",
         )
+        if not api_key_input:
+            st.caption("💡 *Tip: Leave blank & select **mock** above to test offline without an API key.*")
     elif llm_provider == "openai":
         default_openai_key = os.getenv("OPENAI_API_KEY", "")
         api_key_input = st.text_input(
@@ -100,6 +102,8 @@ with st.sidebar:
             type="password",
             help="Get from OpenAI Platform",
         )
+        if not api_key_input:
+            st.caption("💡 *Tip: Or select **mock** above to test without an API key.*")
     elif llm_provider == "groq":
         default_groq_key = os.getenv("GROQ_API_KEY", "")
         api_key_input = st.text_input(
@@ -278,12 +282,25 @@ with tab_chat:
             with st.chat_message("assistant"):
                 with st.spinner("Searching passages and synthesizing answer..."):
                     try:
-                        # Dynamic retriever update in case sidebar changed
+                        # 1. Dynamically sync retriever in case user modified strategy or top_k
                         updated_retriever = st.session_state.vector_manager.get_retriever(
                             retriever_type=retriever_strategy,
                             top_k=top_k,
                         )
                         st.session_state.rag_pipeline.retriever = updated_retriever
+
+                        # 2. Dynamically sync LLM in case user changed provider or key in sidebar
+                        updated_llm = LLMFactory.get_llm(
+                            provider=llm_provider,
+                            api_key=api_key_input if api_key_input else None,
+                        )
+                        from langchain_core.output_parsers import StrOutputParser
+                        st.session_state.rag_pipeline.llm = updated_llm
+                        st.session_state.rag_pipeline.chain = (
+                            st.session_state.rag_pipeline.prompt_template
+                            | updated_llm
+                            | StrOutputParser()
+                        )
 
                         res = st.session_state.rag_pipeline.query(user_query, include_history=True)
                         answer = res["answer"]
@@ -310,7 +327,27 @@ with tab_chat:
                         )
 
                     except Exception as err:
-                        st.error(f"Generation error: {str(err)}")
+                        err_str = str(err)
+                        if any(k in err_str for k in ["API_KEY_INVALID", "API key not valid", "GEMINI_API_KEY"]):
+                            st.error(
+                                "🔑 **Gemini API Key Required or Invalid**\n\n"
+                                "Your query could not be sent to Google Gemini because a valid API key is needed.\n\n"
+                                "**How to fix:**\n"
+                                "1. **Enter a Gemini API Key**: Paste your key into the **Gemini API Key** field in the left sidebar (get one free at [Google AI Studio](https://aistudio.google.com/app/apikey)).\n"
+                                "2. **Or Test Offline for Free**: In the left sidebar, change **LLM Provider** from `gemini` to `mock` to test the entire retrieval and citation pipeline immediately without any API key."
+                            )
+                        elif "OPENAI_API_KEY" in err_str:
+                            st.error(
+                                "🔑 **OpenAI API Key Missing or Invalid**\n\n"
+                                "Please paste your OpenAI API key in the sidebar or switch **LLM Provider** to `mock`."
+                            )
+                        elif "GROQ_API_KEY" in err_str:
+                            st.error(
+                                "🔑 **Groq API Key Missing or Invalid**\n\n"
+                                "Please paste your Groq API key in the sidebar or switch **LLM Provider** to `mock`."
+                            )
+                        else:
+                            st.error(f"Generation error: {err_str}")
 
 
 # ----------------- TAB 2: EVALUATION & BENCHMARK -----------------
