@@ -163,7 +163,7 @@ RAG_LLM_QA/
 ### 2. Clone and Setup Environment
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/RAG_LLM_QA.git
+git clone https://github.com/hemanthmikkie/RAG_LLM_QA.git
 cd RAG_LLM_QA
 
 # Create virtual environment
