@@ -35,7 +35,7 @@ class EmbeddingFactory:
                 raise ValueError(
                     "Google Gemini API key not found. Please set GEMINI_API_KEY in your environment or .env file."
                 )
-            model = model_name or "models/text-embedding-004"
+            model = model_name or "models/gemini-embedding-001"
             return GoogleGenerativeAIEmbeddings(
                 model=model,
                 google_api_key=key,

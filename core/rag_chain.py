@@ -61,7 +61,7 @@ class LLMFactory:
             key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
             if not key:
                 raise ValueError("GEMINI_API_KEY must be configured to use Google Gemini models.")
-            model = model_name or "gemini-1.5-flash"
+            model = model_name or "gemini-3.6-flash"
             return ChatGoogleGenerativeAI(
                 model=model,
                 temperature=temperature,
@@ -203,13 +203,15 @@ class RAGPipeline:
         history_to_send = self.chat_history if include_history else []
 
         # 4. Generate answer through LCEL chain
-        answer = self.chain.invoke(
+        raw_answer = self.chain.invoke(
             {
                 "context": formatted_context,
                 "chat_history": history_to_send,
                 "question": question,
             }
         )
+        answer = str(raw_answer).strip()
+
 
         # 5. Update history if conversational
         if include_history:

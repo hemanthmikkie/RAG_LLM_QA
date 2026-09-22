@@ -26,8 +26,10 @@ class ServiceState:
     vector_manager: Optional[VectorStoreManager] = None
     rag_pipeline: Optional[RAGPipeline] = None
     indexed_documents: List[str] = []
+    llm_provider: str = "gemini"   # stored at index time, used at query time
 
 state = ServiceState()
+
 
 
 class QueryRequest(BaseModel):
@@ -68,10 +70,11 @@ def health_check():
     """Check service status and index size."""
     count = state.vector_manager.count_chunks() if state.vector_manager else 0
     return {
-        "status": "healthy" if state.rag_pipeline else "uninitialized",
+        "status": "healthy" if state.vector_manager else "uninitialized",
         "indexed_files": state.indexed_documents,
         "total_chunks": count,
     }
+
 
 
 @app.post("/index-samples")
@@ -105,12 +108,9 @@ def index_samples(
     v_mgr = VectorStoreManager(embeddings=emb)
     v_mgr.build_from_documents(chunks, save_to_disk=False)
 
-    llm = LLMFactory.get_llm(provider=llm_provider)
-    retriever = v_mgr.get_retriever(retriever_type="hybrid", top_k=4)
-    pipeline = RAGPipeline(retriever=retriever, llm=llm)
-
     state.vector_manager = v_mgr
-    state.rag_pipeline = pipeline
+    state.rag_pipeline = None          # will be built lazily at query time
+    state.llm_provider = llm_provider
     state.indexed_documents = file_names
 
     return {
@@ -118,6 +118,7 @@ def index_samples(
         "indexed_files": file_names,
         "total_chunks": len(chunks),
     }
+
 
 
 @app.post("/upload")
@@ -154,12 +155,9 @@ async def upload_documents(
     v_mgr = VectorStoreManager(embeddings=emb)
     v_mgr.build_from_documents(chunks, save_to_disk=False)
 
-    llm = LLMFactory.get_llm(provider=llm_provider)
-    retriever = v_mgr.get_retriever(retriever_type="hybrid", top_k=4)
-    pipeline = RAGPipeline(retriever=retriever, llm=llm)
-
     state.vector_manager = v_mgr
-    state.rag_pipeline = pipeline
+    state.rag_pipeline = None          # built lazily at query time
+    state.llm_provider = llm_provider
     state.indexed_documents = file_names
 
     return {
@@ -169,15 +167,28 @@ async def upload_documents(
     }
 
 
+
 @app.post("/query", response_model=QueryResponse)
 def query_documents(req: QueryRequest):
     """Execute a single grounded Q&A query over the indexed knowledge base."""
-    if not state.rag_pipeline or not state.vector_manager:
+    if not state.vector_manager:
         raise HTTPException(status_code=400, detail="No documents indexed. Call /upload or /index-samples first.")
 
-    # Configure dynamic retriever
-    retriever = state.vector_manager.get_retriever(retriever_type=req.retriever_type, top_k=req.top_k)
-    state.rag_pipeline.retriever = retriever
+    # Resolve llm_provider: request overrides state default
+    provider = req.llm_provider or state.llm_provider or "mock"
+
+    # Build or rebuild pipeline if needed
+    if state.rag_pipeline is None or req.llm_provider:
+        try:
+            llm = LLMFactory.get_llm(provider=provider)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        retriever = state.vector_manager.get_retriever(retriever_type=req.retriever_type, top_k=req.top_k)
+        state.rag_pipeline = RAGPipeline(retriever=retriever, llm=llm)
+    else:
+        state.rag_pipeline.retriever = state.vector_manager.get_retriever(
+            retriever_type=req.retriever_type, top_k=req.top_k
+        )
 
     result = state.rag_pipeline.query(req.question, include_history=False)
     return result
@@ -186,11 +197,22 @@ def query_documents(req: QueryRequest):
 @app.post("/chat", response_model=QueryResponse)
 def chat_with_documents(req: ChatRequest):
     """Multi-turn conversational Q&A endpoint retaining previous turn context."""
-    if not state.rag_pipeline or not state.vector_manager:
+    if not state.vector_manager:
         raise HTTPException(status_code=400, detail="No documents indexed. Call /upload or /index-samples first.")
 
-    retriever = state.vector_manager.get_retriever(retriever_type=req.retriever_type, top_k=req.top_k)
-    state.rag_pipeline.retriever = retriever
+    provider = req.llm_provider or state.llm_provider or "mock"
+
+    if state.rag_pipeline is None or req.llm_provider:
+        try:
+            llm = LLMFactory.get_llm(provider=provider)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        retriever = state.vector_manager.get_retriever(retriever_type=req.retriever_type, top_k=req.top_k)
+        state.rag_pipeline = RAGPipeline(retriever=retriever, llm=llm)
+    else:
+        state.rag_pipeline.retriever = state.vector_manager.get_retriever(
+            retriever_type=req.retriever_type, top_k=req.top_k
+        )
 
     result = state.rag_pipeline.query(req.question, include_history=True)
     return result
@@ -203,4 +225,3 @@ def reset_state():
     state.rag_pipeline = None
     state.indexed_documents = []
     return {"message": "Knowledge base and session history cleared."}
-
