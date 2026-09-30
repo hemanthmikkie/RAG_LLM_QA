@@ -181,32 +181,62 @@ RAG_LLM_QA/
 
 ---
 
-## 🚀 Quickstart & Setup
+## ⚡ Quick Run Commands (Cheat Sheet)
+
+For quick evaluation, here are all execution commands in one place:
+
+| Purpose | Windows (PowerShell) | Linux / macOS (Bash) |
+|---|---|---|
+| **1. Create & Activate venv** | `python -m venv .venv; .venv\Scripts\activate` | `python -m venv .venv && source .venv/bin/activate` |
+| **2. Install Dependencies** | `pip install -r requirements.txt` | `pip install -r requirements.txt` |
+| **3. Launch Web UI** | `streamlit run app.py` | `streamlit run app.py` |
+| **4. Launch REST API Server** | `uvicorn api:app --port 8000 --reload` | `uvicorn api:app --port 8000 --reload` |
+| **5. Run Automated Tests** | `pytest tests/ -v` | `pytest tests/ -v` |
+| **6. Run CLI Benchmark** | `python evaluate.py` | `python evaluate.py` |
+| **7. Build & Run Docker** | `docker build -t rag-qa . ; docker run -p 8000:8000 rag-qa` | `docker build -t rag-qa . && docker run -p 8000:8000 rag-qa` |
+
+---
+
+## 🚀 Step-by-Step Setup Guide
 
 ### 1. Clone & Set Up Virtual Environment
 
+**On Windows (PowerShell):**
+```powershell
+# Clone the repository
+git clone https://github.com/hemanthmikkie/RAG_LLM_QA.git
+cd RAG_LLM_QA
+
+# Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# Install all dependencies
+pip install -r requirements.txt
+```
+
+**On Linux / macOS:**
 ```bash
 # Clone the repository
 git clone https://github.com/hemanthmikkie/RAG_LLM_QA.git
 cd RAG_LLM_QA
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-
-# Activate virtual environment
-# Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-# Windows (CMD):
-.venv\Scripts\activate.bat
-# Linux / macOS:
 source .venv/bin/activate
 
-# Install dependencies
+# Install all dependencies
 pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment Variables
 Copy `.env.example` to `.env`:
+
+**Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env
+```
+**Linux / macOS:**
 ```bash
 cp .env.example .env
 ```
@@ -234,6 +264,7 @@ RETRIEVER_TYPE=hybrid
 ## 🖥️ Running the Application
 
 ### Option A: Interactive Streamlit Web UI
+Run the web application:
 ```bash
 streamlit run app.py
 ```
@@ -244,18 +275,29 @@ Open **[http://localhost:8501](http://localhost:8501)** in your browser:
 
 ---
 
-### Option B: FastAPI REST Service (Production Mode)
+### Option B: FastAPI REST Service (Production Server)
+Start the high-performance REST API:
 ```bash
 uvicorn api:app --port 8000 --reload
 ```
-Interactive OpenAPI documentation is live at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+Interactive OpenAPI / Swagger documentation is live at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
 
-#### Sample REST API Calls:
+#### Sample REST API Calls (cURL):
+
 ```bash
-# 1. Index sample knowledge base
+# 1. Check Service Health
+curl -X GET "http://localhost:8000/health"
+
+# 2. Index Sample Knowledge Base (1-Click)
 curl -X POST "http://localhost:8000/index-samples?embedding_provider=huggingface&llm_provider=gemini"
 
-# 2. Query with Hybrid Retrieval
+# 3. Upload and Index Custom Documents (Multipart Form)
+curl -X POST "http://localhost:8000/upload" \
+     -F "files=@data/sample_docs/company_policies.txt" \
+     -F "embedding_provider=huggingface" \
+     -F "llm_provider=gemini"
+
+# 4. Ask a Grounded Single-Turn Question
 curl -X POST "http://localhost:8000/query" \
      -H "Content-Type: application/json" \
      -d '{
@@ -265,13 +307,24 @@ curl -X POST "http://localhost:8000/query" \
        "llm_provider": "gemini"
      }'
 
-# 3. Check service health & index metrics
-curl -X GET "http://localhost:8000/health"
+# 5. Multi-Turn Conversational Chat (Retains History)
+curl -X POST "http://localhost:8000/chat" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "question": "What is the maximum reimbursement for home office equipment?",
+       "retriever_type": "hybrid",
+       "top_k": 3,
+       "session_id": "session-1"
+     }'
+
+# 6. Reset Knowledge Base & History
+curl -X DELETE "http://localhost:8000/reset"
 ```
 
 ---
 
 ### Option C: Standalone CLI Benchmark
+Run the automated benchmarking and groundedness audit directly in the terminal:
 ```bash
 python evaluate.py
 ```
