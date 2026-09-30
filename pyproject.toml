@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-llm-qa"
+version = "1.0.0"
+description = "Enterprise RAG Document Q&A System with LangChain, FAISS, and BM25"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Thippavathi Hemanth Kumar", email = "hemanthkumarthippavathi@gmail.com"}
+]
+keywords = ["rag", "langchain", "faiss", "bm25", "gemini", "fastapi", "streamlit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+

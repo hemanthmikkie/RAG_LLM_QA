@@ -15,11 +15,35 @@ from core.vector_store import VectorStoreManager
 from core.rag_chain import RAGPipeline, LLMFactory
 from core.evaluation import RAGEvaluator
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="RAG Document Q&A API",
     description="REST API for Document Ingestion, Hybrid Retrieval, Grounded Question Answering, and Evaluation.",
     version="1.0.0",
 )
+
+# Enable Cross-Origin Resource Sharing (CORS) for web clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/", tags=["General"])
+def root():
+    """Root endpoint welcoming users and directing to interactive documentation."""
+    return {
+        "service": "Enterprise RAG Document Q&A API",
+        "version": "1.0.0",
+        "documentation": "/docs",
+        "health": "/health",
+        "status": "online",
+    }
+
 
 # Global State Container
 class ServiceState:

@@ -5,7 +5,7 @@
 [![FAISS](https://img.shields.io/badge/Vector%20Store-FAISS-orange.svg)](https://github.com/facebookresearch/faiss)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
-[![Pytest 9/9](https://img.shields.io/badge/Tests-9%2F9%20Passing-brightgreen.svg)](tests/)
+[![Pytest 10/10](https://img.shields.io/badge/Tests-10%2F10%20Passing-brightgreen.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Portfolio Project for Generative AI & Machine Learning Engineering Roles**  

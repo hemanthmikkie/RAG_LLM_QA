@@ -7,11 +7,20 @@ from api import app
 client = TestClient(app)
 
 
+def test_root_endpoint():
+    res = client.get("/")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "online"
+    assert "/docs" in data["documentation"]
+
+
 def test_health_uninitialized():
     res = client.get("/health")
     assert res.status_code == 200
     data = res.json()
     assert "status" in data
+
 
 
 def test_index_samples_and_query_endpoints():
