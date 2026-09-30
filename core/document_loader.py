@@ -63,7 +63,12 @@ class DocumentLoaderService:
                 metadata = dict(doc.metadata)
                 metadata["source"] = filename
                 metadata["file_path"] = file_path
-                metadata.setdefault("page", metadata.get("page", 1))
+                # Normalize 0-indexed page numbers from PDF parsers to 1-indexed for human readability
+                raw_page = metadata.get("page", 0)
+                try:
+                    metadata["page"] = int(raw_page) + 1 if isinstance(raw_page, int) else 1
+                except (ValueError, TypeError):
+                    metadata["page"] = 1
                 cleaned_docs.append(
                     Document(page_content=cleaned_content, metadata=metadata)
                 )
