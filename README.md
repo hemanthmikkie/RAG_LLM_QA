@@ -24,7 +24,7 @@
 | **Supported Embeddings** | HuggingFace `all-MiniLM-L6-v2` (Local/Free CPU), Google `models/gemini-embedding-001` (3072-dim), and OpenAI `text-embedding-3-small`. |
 | **Key Performance Metrics** | **22.18 ms** hybrid retrieval latency • **89.7%** answer groundedness score • **100%** out-of-domain abstention precision. |
 | **Production Interfaces** | **FastAPI** REST API (OpenAPI/Swagger docs) + **Streamlit** Interactive Web Dashboard. |
-| **Code Quality & Testing** | Modular design, decoupled service layers, environment-isolated configurations, and **9/9 automated pytest tests passing**. |
+| **Code Quality & Testing** | Modular design, decoupled service layers, environment-isolated configurations, and **10/10 automated pytest tests passing**. |
 
 ---
 
@@ -340,16 +340,17 @@ pytest tests/ -v
 ```
 
 ```text
-tests/test_api.py::test_health_uninitialized PASSED                      [ 11%]
-tests/test_api.py::test_index_samples_and_query_endpoints PASSED         [ 22%]
-tests/test_rag.py::test_clean_text PASSED                                [ 33%]
-tests/test_rag.py::test_document_loader_txt PASSED                       [ 44%]
-tests/test_rag.py::test_document_loader_pdf PASSED                       [ 55%]
-tests/test_rag.py::test_chunker_metadata PASSED                          [ 66%]
-tests/test_rag.py::test_vector_store_dense_and_hybrid PASSED             [ 77%]
-tests/test_rag.py::test_rag_pipeline_and_citations PASSED                [ 88%]
+tests/test_api.py::test_root_endpoint PASSED                             [ 10%]
+tests/test_api.py::test_health_uninitialized PASSED                      [ 20%]
+tests/test_api.py::test_index_samples_and_query_endpoints PASSED         [ 30%]
+tests/test_rag.py::test_clean_text PASSED                                [ 40%]
+tests/test_rag.py::test_document_loader_txt PASSED                       [ 50%]
+tests/test_rag.py::test_document_loader_pdf PASSED                       [ 60%]
+tests/test_rag.py::test_chunker_metadata PASSED                          [ 70%]
+tests/test_rag.py::test_vector_store_dense_and_hybrid PASSED             [ 80%]
+tests/test_rag.py::test_rag_pipeline_and_citations PASSED                [ 90%]
 tests/test_rag.py::test_evaluation_metrics PASSED                        [100%]
-======================= 9 passed in 26.63s =======================
+======================= 10 passed in 31.60s =======================
 ```
 
 ---
