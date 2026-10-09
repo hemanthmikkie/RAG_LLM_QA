@@ -65,6 +65,49 @@ flowchart TD
     end
 ```
 
+### 🔄 Conversational Chat Workflow (Multi-Turn Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Client
+    participant UI as Interface (Streamlit / FastAPI /chat)
+    participant Memory as Session Memory Buffer
+    participant Hybrid as Hybrid Retriever (FAISS + BM25)
+    participant Prompt as Context Formatter & LCEL Chain
+    participant LLM as LLM (Gemini 3.6 / GPT-4o-mini / Groq)
+
+    User->>UI: Send Message ("What is the equipment reimbursement limit?")
+    UI->>Memory: Retrieve Prior Turns for Session (Human & AI messages)
+    Memory-->>UI: History Context
+    UI->>Hybrid: Retrieve Chunks (question, top_k=3)
+    par Dense Vector Search
+        Hybrid->>Hybrid: FAISS Cosine Distance Search
+    and Sparse Keyword Search
+        Hybrid->>Hybrid: BM25 Term Frequency Match
+    end
+    Hybrid->>Hybrid: Convex Rank Fusion (0.5 * Dense + 0.5 * BM25)
+    Hybrid-->>UI: Top-K Document Chunks + Page Metadata
+    UI->>Prompt: Format Grounded Context ([Passage 1], [Passage 2]...)
+    Prompt->>LLM: Stream System Prompt + History + Augmented Context + Question
+    Note over LLM: Strict Grounding Check:<br/>Only use provided passages.<br/>Abstain if information missing.
+    LLM-->>Prompt: Generated Answer with In-Text Citations
+    Prompt-->>UI: Grounded Response + Source Metadata
+    UI->>Memory: Append New Turn (HumanMessage & AIMessage)
+    UI-->>User: Render Streamlit Chat / REST JSON with Expandable Citations
+```
+
+#### 💬 Chat Execution Flow Explained:
+1. **Query & Session Intake**: The user interacts via Streamlit chat or FastAPI `/chat`. The system associates each request with a conversation session ID to maintain conversational continuity.
+2. **Prior Memory Retrieval**: Prior user queries and assistant answers are pulled from the session buffer and passed into the LangChain prompt template via `MessagesPlaceholder`.
+3. **Dual-Path Hybrid Search**: Rather than relying purely on vector similarity, the query is executed simultaneously across:
+   - **Dense FAISS**: Captures high-level semantic meaning and paraphrased questions.
+   - **Sparse BM25**: Accurately targets exact numbers, dollar figures, and acronyms.
+   - **Convex Rank Fusion**: Combines both rankings with balanced weights ($0.5 \times \text{Dense} + 0.5 \times \text{BM25}$) to extract the most accurate top-$k$ passages.
+4. **Citation Tagging & Formatting**: Retrieved document chunks are formatted with explicit indices (`[Passage 1]`, `[Passage 2]`), including original file names and 1-based page numbers.
+5. **Anti-Hallucination LLM Generation**: The assembled prompt forces the LLM (Gemini 3.6 Flash / GPT-4o-mini / Groq) to cite relevant passages and explicitly state if information is missing.
+6. **State Persistence & Delivery**: The generated turn is saved back into the session memory buffer, and the UI displays the response with interactive, expandable source passages.
+
 ---
 
 ## 💡 What Makes This System "Production-Grade"?
